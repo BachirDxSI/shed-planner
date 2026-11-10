@@ -212,7 +212,7 @@ function renderPlans() {
     <li>Pick the straightest ${params.rafterSize}. Crown up.</li>
     <li>Ridge plumb cut: miter saw at <b>${((geo.theta * 180) / Math.PI).toFixed(1)}°</b> (or a speed square on the ${params.pitch} mark).</li>
     <li>Measure <b>${ftIn(geo.rafterCut)}</b> along the top edge, long point to long point; make the tail plumb cut parallel to the ridge cut.</li>
-    <li>Birdsmouth: seat <b>${ftIn(geo.seat)}</b> level, heel <b>${ftIn(geo.seat * geo.t)}</b> plumb, located <b>${ftIn((geo.run - geo.seat) / geo.c)}</b> from the ridge along the bottom edge. Don't overcut the corner; finish with a handsaw.</li>
+    <li>Birdsmouth: seat <b>${ftIn(geo.seat)}</b> level, heel <b>${ftIn(geo.seat * geo.t)}</b> plumb, cut into the bottom edge with the heel on the outer face of the wall. The seat's inner end is <b>${ftIn((geo.run - geo.seat) / geo.c)}</b> from the ridge along the bottom edge. Don't overcut the corner; finish with a handsaw.</li>
     <li>Test a pair on the deck at ${ftIn(geo.W)} between heel points before cutting the other ${geo.members.filter((m) => m.kind === 'Rafter' || m.kind === 'Fly rafter').length - 1}.</li>
     <li>Fly rafters have no birdsmouth.</li>
   </ol></div>`;

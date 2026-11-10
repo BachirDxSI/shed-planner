@@ -15,4 +15,5 @@ Move finished items to Done with the PR or date. Keep Now to 1–3 items.
 - [ ] Metric units toggle — useful in Québec
 
 ## Done
+- [x] Fix the inside-out rafter birdsmouth (fix/birdsmouth-notch, 2026-11-09)
 - [x] Project scaffold and first public release on GitHub Pages (2026-11-09)
