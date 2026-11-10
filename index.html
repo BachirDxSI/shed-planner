@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gable Shed Planner — parametric plans, materials & cost</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600;700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+    { "imports": {
+        "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 32 32"><path d="M3 15 16 4l13 11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><path d="M7 13v15h18V13" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 28v-9h6v9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      </span>
+      <div>
+        <strong>Gable Shed Planner</strong>
+        <small id="subtitle"></small>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="model" aria-selected="true">3D model</button>
+      <button role="tab" data-tab="plans">Plans</button>
+      <button role="tab" data-tab="materials">Materials</button>
+      <button role="tab" data-tab="cutlist">Cut list</button>
+      <button role="tab" data-tab="cost">Cost</button>
+      <button role="tab" data-tab="review">Listing review</button>
+    </nav>
+    <button class="btn ghost" id="printBtn" title="Print the current tab">Print / PDF</button>
+  </header>
+
+  <div class="layout">
+    <aside class="panel" id="panel" aria-label="Design options">
+      <form id="params" autocomplete="off"></form>
+      <div id="warnings" class="warnings" role="status" aria-live="polite"></div>
+      <div class="keyfacts" id="keyfacts"></div>
+    </aside>
+
+    <main>
+      <section class="tab" id="tab-model">
+        <div class="viewer" id="viewer"></div>
+        <div class="viewer-ui">
+          <div class="seg" role="group" aria-label="Preset">
+            <button data-preset="finished" class="on">Finished</button>
+            <button data-preset="framing">Framing</button>
+            <button data-preset="cutaway">Cutaway</button>
+          </div>
+          <div class="seg" role="group" aria-label="Camera">
+            <button data-view="iso">3/4</button>
+            <button data-view="front">Front</button>
+            <button data-view="left">Side</button>
+            <button data-view="back">Back</button>
+            <button data-view="top">Top</button>
+          </div>
+          <details class="layers">
+            <summary>Layers</summary>
+            <div id="layerToggles"></div>
+          </details>
+        </div>
+        <p class="hint">Drag to orbit · scroll to zoom · right-drag to pan</p>
+      </section>
+
+      <section class="tab" id="tab-plans" hidden>
+        <div class="tab-head">
+          <div>
+            <h1>Construction plans</h1>
+            <p>Generated from your options. Dimensions are to the framing unless noted. Print to PDF on letter, landscape.</p>
+          </div>
+        </div>
+        <div id="sheets"></div>
+      </section>
+
+      <section class="tab" id="tab-materials" hidden>
+        <div class="tab-head">
+          <div>
+            <h1>Materials list</h1>
+            <p>Lumber counts come from a cut-optimised layout (see Cut list). Sheet goods and roofing include waste.</p>
+          </div>
+          <button class="btn" id="csvBtn">Download CSV</button>
+        </div>
+        <div id="materials"></div>
+      </section>
+
+      <section class="tab" id="tab-cutlist" hidden>
+        <div class="tab-head">
+          <div>
+            <h1>Cut list</h1>
+            <p>Every piece, then how to cut it from stock lengths with the least waste (1/8" kerf).</p>
+          </div>
+        </div>
+        <div id="cutlist"></div>
+      </section>
+
+      <section class="tab" id="tab-cost" hidden>
+        <div class="tab-head">
+          <div>
+            <h1>Cost estimate</h1>
+            <p>Pick a price region, then type your own prices into any row; they're saved in this browser.</p>
+          </div>
+          <div class="cost-opts">
+            <label>Prices <select id="region"></select></label>
+            <label><span id="taxLabel">Sales tax %</span> <input type="number" id="tax" min="0" max="20" step="0.025" value="8" /></label>
+            <label>Contingency % <input type="number" id="cont" min="0" max="40" step="1" value="10" /></label>
+            <button class="btn ghost" id="resetPrices">Reset prices</button>
+          </div>
+        </div>
+        <div id="cost"></div>
+      </section>
+
+      <section class="tab" id="tab-review" hidden>
+        <div id="review"></div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Global git hooks for every agent and repo on this machine.
+# See ~/.agents/GITHUB_STANDARDS.md §11. Enabled with:
+#   git config --global core.hooksPath ~/.agents/git-hooks
+#
+# pre-commit: blocks commits on main/master once the repo has an origin/main,
+#             and scans staged changes for secrets (gitleaks).
+# pre-push:   blocks pushes to (or deletion of) an existing main/master,
+#             and scans the commits being pushed for secrets.
+# Then runs the repo's own .git/hooks/<name>, which core.hooksPath would hide.
+#
+# Overrides are for the USER only; agents never set them or use --no-verify:
+#   ALLOW_MAIN=1      allow a commit/push to main
+#   SKIP_GITLEAKS=1   skip the secret scan (false positive: prefer .gitleaksignore)
+set -u
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"   # GUI git apps (Xcode, Desktop) lack Homebrew in PATH
+hook=$(basename "$0")
+protected='^(main|master)$'
+zero=0000000000000000000000000000000000000000
+
+die() { printf '\n\033[31m✖ %s\033[0m\n  %s\n\n' "$1" "$2" >&2; exit 1; }
+scan() { command -v gitleaks >/dev/null && [ "${SKIP_GITLEAKS:-}" != 1 ]; }
+
+stdin=""
+case "$hook" in
+  pre-commit)
+    branch=$(git symbolic-ref --short -q HEAD || true)
+    if [[ "$branch" =~ $protected ]] && [ "${ALLOW_MAIN:-}" != 1 ] \
+       && git rev-parse -q --verify "refs/remotes/origin/$branch" >/dev/null; then
+      die "Commit on '$branch' blocked: all work goes through a branch + PR." \
+          "Move first (staged changes come along): git switch -c feat/<topic>"
+    fi
+    if scan; then
+      gitleaks git --pre-commit --staged --redact --no-banner --log-level warn . >&2 \
+        || die "Possible secret in staged changes (gitleaks)." \
+               "Remove it; keep secrets in .env (gitignored) and document them in .env.example."
+    fi
+    ;;
+  pre-push)
+    stdin=$(cat)
+    remote="$1"
+    while read -r lref lsha rref rsha; do
+      [ -z "${rref:-}" ] && continue
+      name=${rref#refs/heads/}
+      if [[ "$name" =~ $protected ]] && [ "$rsha" != "$zero" ] && [ "${ALLOW_MAIN:-}" != 1 ]; then
+        die "Push to '$name' on $remote blocked: all work goes through a branch + PR." \
+            "git switch -c feat/<topic> && git push -u origin HEAD && gh pr create --draft"
+      fi
+      [ "$lsha" = "$zero" ] && continue   # deleting a non-protected branch
+      if scan; then
+        if [ "$rsha" = "$zero" ]; then range="$lsha --not --remotes=$remote"; else range="$rsha..$lsha"; fi
+        gitleaks git --log-opts="$range" --redact --no-banner --log-level warn . >&2 \
+          || die "Possible secret in the commits being pushed (gitleaks)." \
+                 "Remove it from those commits and rotate it if it's real. Tell the user."
+      fi
+    done <<< "$stdin"
+    ;;
+esac
+
+# Chain to the repo's own hook, if it has one.
+common=$(git rev-parse --git-common-dir 2>/dev/null) || exit 0
+own="$common/hooks/$hook"
+if [ -x "$own" ]; then
+  if [ "$hook" = pre-push ]; then printf '%s\n' "$stdin" | "$own" "$@"; exit $?; fi
+  exec "$own" "$@"
+fi
+exit 0

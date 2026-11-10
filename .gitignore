@@ -1,0 +1,37 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies & build output (adapt to the stack)
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+__pycache__/
+*.pyc
+.venv/
+target/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Local tooling
+.claude/
+.impeccable/
