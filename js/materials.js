@@ -250,15 +250,15 @@ function sidingItems(geo, item, P) {
 // Grouped piece schedule: same stock + kind + length -> one row.
 export function pieceSchedule(geo) {
   const rows = {};
-  const add = (stock, kind, cut, where) => {
+  const add = (stock, kind, cut, where, note = 'Square cut') => {
     if (!STOCK_LENGTHS[stock]) return;
-    const key = `${stock}|${kind}|${cut.toFixed(3)}`;
-    rows[key] ||= { stock, kind, cut, qty: 0, where: new Set() };
+    const key = `${stock}|${kind}|${cut.toFixed(3)}|${note}`;
+    rows[key] ||= { stock, kind, cut, note, qty: 0, where: new Set() };
     rows[key].qty++;
     rows[key].where.add(where);
   };
-  geo.members.forEach((m) => add(m.stock, m.kind, m.cut, prettyGroup(m.group)));
-  geo.trim.forEach((t) => add(t.stock, t.kind, t.cut, t.face ? `${t.face} face` : 'trim'));
+  geo.members.forEach((m) => add(m.stock, m.kind, m.cut, prettyGroup(m.group), m.note));
+  geo.trim.forEach((t) => add(t.stock, t.kind, t.cut, t.face ? `${t.face} face` : 'trim', t.note));
   return Object.values(rows).sort((a, b) => a.stock.localeCompare(b.stock) || a.kind.localeCompare(b.kind) || b.cut - a.cut);
 }
 

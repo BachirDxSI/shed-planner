@@ -127,7 +127,7 @@ function renderKeyFacts() {
     <dt>Ridge height</dt><dd>${ftIn(geo.heights.peak)}</dd>
     <dt>Wall height (plate)</dt><dd>${ftIn(geo.heights.plate)}</dd>
     <dt>Roof area</dt><dd>${take.squares.toFixed(2)} squares</dd>
-    <dt>Rafters</dt><dd>${geo.rafterX.length} pairs × ${ftIn(geo.rafterCut)}</dd>
+    <dt>Rafters</dt><dd>${geo.rafterX.length} pairs, ${ftIn(geo.rafterStock)} blanks</dd>
     <dt>Studs (all walls)</dt><dd>${geo.members.filter((m) => m.group.startsWith('wall') && /stud/i.test(m.kind)).length}</dd>
   </dl>`;
 }
@@ -167,6 +167,7 @@ function generalNotes() {
       <li>Set rafter pairs ${params.rafterSpacing}" O.C., ties at plate; gable studs; fly rafters; sub-fascia.</li>
       <li>Roof sheathing with H-clips, drip edge at eaves, felt, drip edge at rakes, starter, shingles, ridge cap.</li>
       <li>Siding with Z-flashing at horizontal joints and over openings; windows; doors; trim & battens; caulk; paint.</li>
+      <li>Long walls: the rafter tails hang below the plate, so cut siding tops <b>${ftIn(geo.H - geo.eaveSidingTop)}</b> and battens/corner boards <b>${ftIn(geo.H - geo.eaveTrimTop)}</b> below the top of the plate. Close the rafter bays above with screened vent blocking.</li>
     </ol></div>`;
 }
 
@@ -211,8 +212,9 @@ function renderPlans() {
   const ruled = `<div class="notes" style="columns:1;font-size:12px"><h4>Cutting the rafters</h4><ol>
     <li>Pick the straightest ${params.rafterSize}. Crown up.</li>
     <li>Ridge plumb cut: miter saw at <b>${((geo.theta * 180) / Math.PI).toFixed(1)}°</b> (or a speed square on the ${params.pitch} mark).</li>
-    <li>Measure <b>${ftIn(geo.rafterCut)}</b> along the top edge, long point to long point; make the tail plumb cut parallel to the ridge cut.</li>
-    <li>Birdsmouth: seat <b>${ftIn(geo.seat)}</b> level, heel <b>${ftIn(geo.seat * geo.t)}</b> plumb, cut into the bottom edge with the heel on the outer face of the wall. The seat's inner end is <b>${ftIn((geo.run - geo.seat) / geo.c)}</b> from the ridge along the bottom edge. Don't overcut the corner; finish with a handsaw.</li>
+    <li>Start from a blank at least <b>${ftIn(geo.rafterStock)}</b> long. The two plumb cuts lean the same way, so the tips are ${ftIn(geo.rafterStock - geo.rafterCut)} farther apart than the cuts.</li>
+    <li>Tail plumb cut: measure <b>${ftIn(geo.rafterCut)}</b> along the top edge from the ridge cut's top corner, and cut parallel to the ridge cut.</li>
+    <li>Birdsmouth: seat <b>${ftIn(geo.seat)}</b> level, heel <b>${ftIn(geo.seat * geo.t)}</b> plumb, cut into the bottom edge with the heel on the outer face of the wall. The seat's inner end is <b>${ftIn((geo.run - geo.seat) / geo.c)}</b> from the ridge cut's bottom corner, measured along the bottom edge. Don't overcut the corner; finish with a handsaw.</li>
     <li>Test a pair on the deck at ${ftIn(geo.W)} between heel points before cutting the other ${geo.members.filter((m) => m.kind === 'Rafter' || m.kind === 'Fly rafter').length - 1}.</li>
     <li>Fly rafters have no birdsmouth.</li>
   </ol></div>`;
@@ -256,8 +258,8 @@ function csv() {
 function renderCutList() {
   const sched = pieceSchedule(geo);
   const stockGroups = groupBy(sched, 'stock');
-  const table = `<table class="data"><thead><tr><th>Stock</th><th>Part</th><th class="n">Length</th><th class="n">Qty</th><th>Where</th></tr></thead><tbody>${Object.entries(stockGroups)
-    .map(([st, rows]) => `<tr class="sec"><td colspan="5">${st}</td></tr>${rows.map((r) => `<tr><td>${r.stock}</td><td>${r.kind}</td><td class="n">${ftIn(r.cut)}</td><td class="n">${r.qty}</td><td>${[...r.where].join(', ')}</td></tr>`).join('')}`)
+  const table = `<table class="data"><thead><tr><th>Stock</th><th>Part</th><th class="n">Length</th><th class="n">Qty</th><th>Ends</th><th>Where</th></tr></thead><tbody>${Object.entries(stockGroups)
+    .map(([st, rows]) => `<tr class="sec"><td colspan="6">${st}</td></tr>${rows.map((r) => `<tr><td>${r.stock}</td><td>${r.kind}</td><td class="n">${ftIn(r.cut)}</td><td class="n">${r.qty}</td><td>${r.note}</td><td>${[...r.where].join(', ')}</td></tr>`).join('')}`)
     .join('')}</tbody></table>`;
   const bars = Object.entries(take.boardsByStock)
     .map(([st, boards]) => {
