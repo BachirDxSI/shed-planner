@@ -5,6 +5,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ## [Unreleased]
 
+### Changed
+- Renamed the app from Gable Shed Planner to Shed Planner, ready for other roof styles.
+
 ### Added
 - Build guide tab: 39 numbered steps from permit to paint, with a 3D picture of each stage, the cut-list pieces each step needs, measured marks for joists, studs and rafters, and a check (square, level, plumb) before moving on.
 - Wall framing sheets name both ends and show which corner to start the stud layout from.
