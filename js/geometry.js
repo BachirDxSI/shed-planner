@@ -164,6 +164,13 @@ export function buildShed(input) {
     xs.push(x1 - 1.5);
     return xs;
   }
+  function cornerLayout(x0, x1, sp) {
+    // end studs flush at x0 and x1; between them, stud centers on multiples of sp from x = 0
+    const xs = [x0];
+    for (let k = 1; k * sp - 0.75 < x1 - 3; k++) if (k * sp - 0.75 >= x0 + 1.5) xs.push(k * sp - 0.75);
+    xs.push(x1 - 1.5);
+    return xs;
+  }
   const nSkids = Math.max(2, Math.ceil((W - 3.5) / 72) + 1);
   const skidZ = [];
   for (let i = 0; i < nSkids; i++) skidZ.push(((W - 3.5) * i) / (nSkids - 1));
@@ -209,7 +216,9 @@ export function buildShed(input) {
     const studLen = H - 4.5;
     const zones = ops.map((o) => [o.xL - 3, o.xL + o.w + 3]);
     const clear = (x) => !zones.some(([a, b]) => x + 1.5 > a && x < b);
-    const grid = layout(w.x0, w.x1, p.studSpacing);
+    // Stud layout is measured from the shed's outside corner (local x = 0) on every wall,
+    // so 4 ft siding panel joints land on stud centers. Gable walls start 3-1/2" in, inside the long walls.
+    const grid = w.gable ? cornerLayout(w.x0, w.x1, p.studSpacing) : layout(w.x0, w.x1, p.studSpacing);
     const studXs = grid.filter(clear);
     // Plate splices land on stud centers. The top plate runs the wall; the cap plate laps the corners
     // (gable-wall caps run over the long walls) and its splices stay at least 4 ft from the top plate's.

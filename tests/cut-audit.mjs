@@ -4,6 +4,7 @@
 // 2. CLASH   no two members overlap in 3D (a piece that's too long hits its neighbor)
 // 3. GAP     studs, jacks, cripples, headers, sills, plates, ties and rafter seats bear on something
 // 4. SPLICE  plate joints land on a stud, rim joints on a joist, cap-plate joints 4 ft from top-plate joints
+// 5. SIDING  4 ft siding panel joints land on a stud (or in an opening)
 // Exits 1 if anything fails.
 const { buildShed, DEFAULTS, toWorld, ftIn } = await import(new URL('../js/geometry.js', import.meta.url));
 const variants = [
@@ -88,6 +89,12 @@ for (const [name, v] of variants) {
     for (const kind of ['Bottom plate', 'Top plate', 'Cap plate']) for (const j of joints(kind)) if (!studs.some(([a, b]) => j > a + 0.4 && j < b - 0.4)) issues.push(`SPLICE ${kind} (${wname}) joint at ${j.toFixed(2)} is not over a stud`);
     const tj = joints('Top plate');
     for (const j of joints('Cap plate')) if (tj.some((t) => Math.abs(t - j) < 47.99)) issues.push(`SPLICE Cap plate (${wname}) joint at ${j.toFixed(1)} within 4 ft of a top-plate joint`);
+  }
+  // 5. siding: every 4 ft panel joint (from each wall's layout corner, x = 0) lands on a stud or inside an opening
+  for (const wn of ['front', 'back', 'left', 'right']) {
+    const span = wn === 'left' || wn === 'right' ? g.W : g.L;
+    const st = g.members.filter((m) => m.group === `wall:${wn}` && /^(Stud|King stud|Jack stud)$/.test(m.kind)).map((m) => Math.min(...m.poly.map((q) => q[0])));
+    for (let j = 48; j < span - 1; j += 48) if (!g.openings[wn].some((o) => j > o.xL && j < o.xL + o.w) && !st.some((x) => j > x + 0.25 && j < x + 1.25)) issues.push(`SIDING ${wn} wall: panel joint ${j}" from the corner has no stud behind it`);
   }
   const rims = g.members.filter((m) => m.kind === 'Rim joist'), joists = g.members.filter((m) => m.kind === 'Floor joist');
   for (const r of rims) for (const j of [r.box[0], r.box[3]]) if (j > 0.01 && j < g.L - 0.01 && !joists.some((q) => j > q.box[0] + 0.4 && j < q.box[3] - 0.4)) issues.push(`SPLICE Rim joist joint at ${j.toFixed(2)} is not over a joist`);

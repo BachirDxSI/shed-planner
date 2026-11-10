@@ -15,6 +15,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - Review of a commercial 12×16 shed-plan listing.
 
 ### Fixed
+- Gable-wall studs are now laid out from the shed's outside corner, so the 4 ft siding panel joints land on studs (before, the gable panel edges at 4 ft and 8 ft had nothing to nail to).
 - Rafter and fly-rafter lengths in the cut list are now the blank you need (8'-10 1/8" for the default shed). The old 8'-5 1/2" was the distance between the plumb cuts, which left a board cut to that length 4 9/16" short. The rafter template shows both numbers.
 - Door jack studs were 1 1/2" too long (they stand on the bottom plate); now 6'-9".
 - Gable studs under the ridge gusset were too long to fit; they now get a square top just under it.
