@@ -6,6 +6,7 @@ Change the size, pitch, doors, windows, rafters or snow load, and everything reg
 
 - **3D model**: finished, framing-only and cutaway views (three.js).
 - **Plans**: 9 printable sheets: cover and notes, floor plan, foundation and floor framing, wall framing for all four walls, roof framing, pattern rafter and gusset templates, elevations and a section.
+- **Build guide**: 39 numbered steps from permit to paint, with stage pictures, the pieces each step needs, exact marks and square checks. Readable on a phone.
 - **Materials**: full takeoff with waste, plus CSV export.
 - **Cut list**: every piece, and an optimized cutting plan from stock lengths.
 - **Cost**: editable unit prices (saved in the browser), tax and contingency.

@@ -247,6 +247,10 @@ export function wallFraming(geo, name) {
   ms.forEach((m) => d.poly(m.poly, { fill: KIND_FILL[m.kind] || C.frame, sw: 0.7 }));
   const H = geo.H;
   const ops = geo.openings[name].slice().sort((a, b) => a.xL - b.xL);
+  // Name both ends so the stud layout is measured from the right corner (wall-local x = 0 is the layout corner).
+  const ENDS = { front: ['LEFT GABLE END', 'RIGHT GABLE END'], back: ['RIGHT GABLE END', 'LEFT GABLE END'], left: ['FRONT CORNER', 'BACK CORNER'], right: ['BACK CORNER', 'FRONT CORNER'] }[name];
+  d.text(wall.x0, -d.fs * 6.2, `◀ ${ENDS[0]}: START STUD LAYOUT HERE`, { size: 0.62, anchor: 'start', weight: 700 });
+  d.text(wall.x1, -d.fs * 6.2, `${ENDS[1]} ▶`, { size: 0.62, anchor: 'end' });
   const chain = [wall.x0, ...ops.flatMap((o) => [o.xL, o.xL + o.w]), wall.x1];
   if (ops.length) for (let i = 0; i < chain.length - 1; i++) d.dim(chain[i], 0, chain[i + 1], 0, -d.fs * 2.4, ftIn(chain[i + 1] - chain[i]), { size: 0.7 });
   d.dim(wall.x0, 0, wall.x1, 0, -d.fs * 4.4, `${ftIn(wall.x1 - wall.x0)} ${wall.gable ? '(BETWEEN LONG WALLS)' : ''}`);

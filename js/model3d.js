@@ -139,6 +139,9 @@ export class ShedViewer {
 
   build(g, { keepCamera = false } = {}) {
     mats();
+    // Mirror X so the model matches the paper plans: facing the front doors, the left gable (x = 0) is on your left.
+    this.root.scale.set(-1 / 12, 1 / 12, 1 / 12);
+    this.root.position.x = g.L / 12;
     const vis = Object.fromEntries(Object.entries(this.layers).map(([k, v]) => [k, v.visible]));
     Object.values(this.layers).forEach((grp) => {
       grp.traverse((o) => o.geometry && o.geometry.dispose());
@@ -295,7 +298,7 @@ export class ShedViewer {
     const cz = g.W / 24;
     const size = Math.max(g.L, g.W) / 12;
     this.controls.target.set(cx, g.heights.peak / 24, cz);
-    this.camera.position.set(cx - size * 1.1, size * 0.85, cz - size * 1.8);
+    this.camera.position.set(cx + size * 1.1, size * 0.85, cz - size * 1.8);
     this.controls.update();
   }
 
@@ -309,10 +312,10 @@ export class ShedViewer {
     const pos = {
       front: [cx, ty, cz - size * 2.1],
       back: [cx, ty, cz + size * 2.1],
-      left: [cx - size * 2.1, ty, cz],
-      right: [cx + size * 2.1, ty, cz],
+      left: [cx + size * 2.1, ty, cz],
+      right: [cx - size * 2.1, ty, cz],
       top: [cx, size * 2.6, cz + 0.01],
-      iso: [cx - size * 1.1, size * 0.85, cz - size * 1.8],
+      iso: [cx + size * 1.1, size * 0.85, cz - size * 1.8],
     }[name];
     this.controls.target.set(cx, ty, cz);
     this.camera.position.set(...pos);
@@ -320,6 +323,26 @@ export class ShedViewer {
 
   setVisible(map) {
     Object.entries(map).forEach(([k, v]) => this.layers[k] && (this.layers[k].visible = v));
+  }
+
+  // Pictures of the build stages from the 3/4 view; restores the camera and layers afterwards.
+  snapshotStages(stages) {
+    const pos = this.camera.position.clone();
+    const tgt = this.controls.target.clone();
+    const vis = Object.fromEntries(Object.entries(this.layers).map(([k, v]) => [k, v.visible]));
+    this.view('iso');
+    this.camera.lookAt(this.controls.target);
+    const out = {};
+    for (const [k, map] of Object.entries(stages)) {
+      Object.entries(this.layers).forEach(([name, grp]) => (grp.visible = !!map[name]));
+      out[k] = this.snapshot();
+    }
+    this.camera.position.copy(pos);
+    this.controls.target.copy(tgt);
+    this.controls.update();
+    this.setVisible(vis);
+    this.renderer.render(this.scene, this.camera);
+    return out;
   }
 
   snapshot() {
