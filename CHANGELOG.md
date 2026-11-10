@@ -13,3 +13,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - Cost estimate with US or Québec City (CAD, TPS+TVQ) prices, editable and saved in the browser.
 - Siding comparison (T1-11, LP SmartSide, spruce board and batten, vinyl); LP SmartSide is the default.
 - Review of a commercial 12×16 shed-plan listing.
+
+### Fixed
+- The rafter birdsmouth was drawn inside out (a bump below the board instead of a notch cut into it). The pattern rafter, 3D model, elevations and section now show a real notch, and the roof, ridge height (now 14'-6 5/8") and gable stud lengths are 2 1/4" lower to match.

@@ -84,7 +84,9 @@ export function buildShed(input) {
   const R = p.rakeOverhang;
   // birdsmouth seat: notch no deeper than 1/3 of the rafter depth
   const seat = Math.min(3.5, Math.floor((D / (3 * s)) * 8) / 8);
-  const yb = (x) => H + Math.min(x, W - x) * t; // rafter bottom edge line
+  // rafter bottom edge line: it meets the plate top at the inner end of the seat,
+  // so the birdsmouth is a notch cut into the rafter (heel plumb on the wall's outer face)
+  const yb = (x) => H + (Math.min(x, W - x) - seat) * t;
   const yt = (x) => yb(x) + D / c; // rafter top edge line
   const peakTop = yt(run);
   const sheathT = 7 / 16;
@@ -254,18 +256,18 @@ export function buildShed(input) {
   // Half-rafter profile in truss coords (x across the width from the front wall's outer face).
   const rafterPoly = (mirror) => {
     const pts = [
-      [-O, H - O * t],
+      [-O, yb(-O)],
+      [0, yb(0)], // heel (plumb) from here up to the plate top
       [0, H],
-      [seat, H],
-      [seat, H + seat * t],
+      [seat, H], // seat (level) on the plate, ends on the bottom edge
       [run, yb(run)],
       [run, yt(run)],
-      [-O, H - O * t + D / c],
+      [-O, yt(-O)],
     ];
     return mirror ? pts.map(([x, y]) => [W - x, y]).reverse() : pts;
   };
   const flyPoly = (mirror) => {
-    const pts = [[-O, H - O * t], [run, yb(run)], [run, yt(run)], [-O, H - O * t + D / c]];
+    const pts = [[-O, yb(-O)], [run, yb(run)], [run, yt(run)], [-O, yt(-O)]];
     return mirror ? pts.map(([x, y]) => [W - x, y]).reverse() : pts;
   };
   const rafterCut = (run + O) / c; // long point, along the top edge
@@ -287,7 +289,7 @@ export function buildShed(input) {
   ];
   const gussetArea = polyArea(gussetPoly);
   const tieTop = H + 3.5;
-  const tieClip = Math.max(0, (tieTop - (H + D / c)) / t);
+  const tieClip = Math.max(0, (tieTop - (H + D / c)) / t + seat);
   const tiePoly = [[0, H], [W, H], [W, Math.min(tieTop, yt(0))], [W - tieClip, tieTop], [tieClip, tieTop], [0, Math.min(tieTop, yt(0))]];
   if (W > MAX_STOCK) warnings.push('Rafter ties longer than 16 ft must be spliced.');
   let gussets = 0;
@@ -315,7 +317,7 @@ export function buildShed(input) {
     });
   }
   // sub-fascia along both eaves, nailed to the rafter tails
-  const sfTop = H - (O + 1.5) * t + D / c;
+  const sfTop = yt(-O - 1.5);
   [false, true].forEach((mirror) => {
     let x = -R;
     splitLength(L + 2 * R).forEach((len) => {

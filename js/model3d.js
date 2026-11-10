@@ -249,7 +249,7 @@ export class ShedViewer {
     // roof slabs (sheathing + shingles) and fascia
     const { O, R, t, D, c, s } = g;
     const thk = g.roofT;
-    const tailTop = H - O * t + D / c;
+    const tailTop = g.yt(-O);
     const S = g.slopeLen + 0.75 / c;
     const len = L + 2 * R + 1.5;
     [1, -1].forEach((side) => {

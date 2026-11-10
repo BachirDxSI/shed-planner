@@ -323,21 +323,21 @@ export function trussElevation(geo) {
 
 // ---------------------------------------------------------------- Rafter detail
 export function rafterDetail(geo) {
-  const { O, run, t, seat, H, D, c, theta } = geo;
+  const { O, run, seat, H, D, c, theta } = geo;
   const d = new Dwg((run + O) / 24);
   const m = geo.members.find((mm) => mm.kind === 'Rafter');
   const pts = m.poly.map(([x, y]) => [x, y - H]);
   d.poly(pts, { fill: C.frame, sw: 1.2 });
   const deg = ((theta * 180) / Math.PI).toFixed(1);
-  const topA = [-O, -O * t + D / c];
-  const topB = [run, run * t + D / c];
-  d.dim(...topA, ...topB, d.fs * 2.2, `${ftIn(geo.rafterCut)} LONG POINT TO LONG POINT`, { size: 0.9 });
-  d.dim(seat, seat * t, run, run * t, -d.fs * 2.4, `${ftIn((run - seat) / c)} BIRDSMOUTH HEEL TO RIDGE (BOTTOM EDGE)`, { size: 0.75 });
-  d.dim(-O, -O * t, 0, 0, -d.fs * 2.4, `${ftIn(O / c)} TAIL`, { size: 0.7 });
-  d.leader(seat / 2, 0, seat + d.fs * 6, -d.fs * 3.4, `SEAT CUT ${ftIn(seat)} LEVEL · HEEL ${ftIn(seat * t)} PLUMB`);
-  d.leader(run, run * t + D / (2 * c), run - d.fs * 3, run * t + D / c + d.fs * 4.4, `RIDGE PLUMB CUT: MITER ${deg}°`, { anchor: 'end' });
-  d.leader(-O, -O * t + D / (2 * c), -O + d.fs * 1, -O * t - d.fs * 4.6, `TAIL PLUMB CUT: MITER ${deg}°`, { anchor: 'start' });
-  d.text(run * 0.45, run * 0.45 * t + D / (2 * c), `${geo.p.rafterSize} — CUT ${geo.members.filter((mm) => mm.kind === 'Rafter' || mm.kind === 'Fly rafter').length}`, { size: 0.85, weight: 700, rot: -deg });
+  const yb = (x) => geo.yb(x) - H; // bottom edge, plate top = 0
+  const yt = (x) => geo.yt(x) - H; // top edge
+  d.dim(-O, yt(-O), run, yt(run), d.fs * 2.2, `${ftIn(geo.rafterCut)} LONG POINT TO LONG POINT`, { size: 0.9 });
+  d.dim(seat, 0, run, yb(run), -d.fs * 2.4, `${ftIn((run - seat) / c)} SEAT TO RIDGE (BOTTOM EDGE)`, { size: 0.75 });
+  d.dim(-O, yb(-O), 0, yb(0), -d.fs * 2.4, `${ftIn(O / c)} TAIL`, { size: 0.7 });
+  d.leader(seat / 2, 0, seat + d.fs * 6, -d.fs * 3.4, `BIRDSMOUTH: SEAT ${ftIn(seat)} LEVEL · HEEL ${ftIn(seat * geo.t)} PLUMB`);
+  d.leader(run, yb(run) + D / (2 * c), run - d.fs * 3, yt(run) + d.fs * 4.4, `RIDGE PLUMB CUT: MITER ${deg}°`, { anchor: 'end' });
+  d.leader(-O, yb(-O) + D / (2 * c), -O + d.fs * 1, yb(-O) - d.fs * 4.6, `TAIL PLUMB CUT: MITER ${deg}°`, { anchor: 'start' });
+  d.text(run * 0.45, yb(run * 0.45) + D / (2 * c), `${geo.p.rafterSize} — CUT ${geo.members.filter((mm) => mm.kind === 'Rafter' || mm.kind === 'Fly rafter').length}`, { size: 0.85, weight: 700, rot: -deg });
   return d.svg(2.4);
 }
 
@@ -367,7 +367,7 @@ export function elevation(geo, face) {
   if (gable) geo.skidZ.forEach((z) => d.rect(z, g0, z + 3.5, g0 + 5.5, { fill: C.pt, sw: 0.7 }));
   else d.rect(0, g0, L, g0 + 5.5, { fill: C.pt, sw: 0.7 });
   // siding
-  const tailTop = H - O * t + D / c;
+  const tailTop = geo.yt(-O);
   if (gable) {
     d.poly([[0, sb], [W, sb], [W, geo.yt(W)], [geo.run, geo.peakTop], [0, geo.yt(0)]], { fill: C.siding, sw: 1 });
   } else d.rect(-0.75, sb, L + 0.75, H, { fill: C.siding, sw: 1 });
@@ -461,7 +461,7 @@ export function section(geo) {
   geo.members.filter((m) => m.kind === 'Sub-fascia').slice(0, 1).forEach((m) => d.poly(up(m.poly), { fill: C.frameDk, sw: 0.7 }));
   geo.members.filter((m) => m.kind === 'Sub-fascia').slice(-1).forEach((m) => d.poly(up(m.poly), { fill: C.frameDk, sw: 0.7 }));
   // roof layers
-  const tailTop = H - O * t + D / c;
+  const tailTop = geo.yt(-O);
   [false, true].forEach((mir) => {
     const a = [-O, tailTop];
     const b = [geo.run, geo.peakTop];
