@@ -2,6 +2,7 @@ import { buildShed, DEFAULTS, ftIn } from './geometry.js';
 import { takeoff, pieceSchedule, costSummary, REGIONS, setRegion, getRegion, SIDING } from './materials.js';
 import * as DW from './drawings.js';
 import { reviewHTML } from './review.js';
+import { guideHTML, GUIDE_STAGES } from './guide.js';
 
 const LS_PARAMS = 'shed.params.v1';
 const LS_REGION = 'shed.region.v1';
@@ -109,6 +110,7 @@ async function update() {
   if (viewer) viewer.build(geo, { keepCamera: !!viewer.g && viewer.g.W === geo.W && viewer.g.L === geo.L });
   renderKeyFacts();
   renderPlans();
+  if (currentTab === 'guide') renderGuide();
   renderMaterials();
   renderCutList();
   renderCost();
@@ -254,6 +256,12 @@ function csv() {
   return rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
 }
 
+// ------------------------------------------------------------ build guide
+function renderGuide() {
+  const shots = viewer ? viewer.snapshotStages(GUIDE_STAGES) : {};
+  document.getElementById('guide').innerHTML = guideHTML(geo, take, shots);
+}
+
 // ------------------------------------------------------------ cut list
 function renderCutList() {
   const sched = pieceSchedule(geo);
@@ -331,6 +339,7 @@ function initTabs() {
       document.querySelectorAll('.tab').forEach((t) => (t.hidden = t.id !== `tab-${currentTab}`));
       if (currentTab === 'model' && viewer) viewer.resize();
       if (currentTab === 'plans' && geo) renderPlans();
+      if (currentTab === 'guide' && geo) renderGuide();
       history.replaceState(null, '', `#${currentTab}`);
     })
   );
@@ -372,6 +381,13 @@ async function init() {
   initTabs();
   document.getElementById('review').innerHTML = reviewHTML();
   document.getElementById('printBtn').onclick = () => window.print();
+  // guide section links scroll inside <main> without touching the #tab hash
+  document.getElementById('guide').addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#g-"]');
+    if (!a) return;
+    e.preventDefault();
+    document.getElementById(a.getAttribute('href').slice(1)).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   document.getElementById('csvBtn').onclick = () => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv()], { type: 'text/csv' }));

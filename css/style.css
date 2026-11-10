@@ -135,9 +135,53 @@ table.data input.changed { border-color: var(--wood); background: #fff8ee; }
 .tag.watch { background: var(--warn-bg); color: var(--warn); }
 .tag.bad { background: #fbe6e3; color: #9b2c1f; }
 
+/* build guide */
+.guide { max-width: 980px; }
+.g-head p { color: var(--muted); max-width: 72ch; }
+.g-toc { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+.g-toc a { font-size: 13px; color: var(--accent); text-decoration: none; border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 11px; }
+.g-toc a:hover { border-color: var(--accent); }
+.g-rules { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; color: var(--ink) !important; }
+.g-phase { margin-top: 34px; scroll-margin-top: 12px; }
+.g-phase-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: end; border-bottom: 2px solid var(--ink); padding-bottom: 10px; margin-bottom: 4px; }
+.g-phase-head h2 { margin: 0 0 4px; font-size: 21px; }
+.g-phase-head p { margin: 0; color: var(--muted); max-width: 60ch; }
+.g-shot { width: 300px; height: 190px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--radius); background: #dfe8ee; display: block; }
+.g-steps { list-style: none; padding: 0; margin: 0; }
+.g-step { border-bottom: 1px solid var(--line); padding: 16px 0; break-inside: avoid; }
+.g-step h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font-size: 16px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.g-num { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.g-body, .g-need, .g-step > p { margin-left: 38px; max-width: 74ch; }
+.g-body p { margin: 0 0 8px; }
+.g-body ul, .g-body ol { margin: 0 0 8px; padding-left: 20px; }
+.g-body li { margin-bottom: 4px; }
+.g-sub li { margin-bottom: 6px; }
+.g-cols { columns: 3; column-gap: 20px; }
+.g-marks { font-variant-numeric: tabular-nums; font-weight: 600; background: #f3efe6; padding: 1px 4px; border-radius: 3px; line-height: 1.9; }
+.g-need { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 12px; margin-top: 4px; margin-bottom: 8px; font-size: 13px; }
+.g-need ul { margin: 4px 0 0; padding-left: 18px; columns: 2; column-gap: 24px; }
+.g-need li { break-inside: avoid; margin-bottom: 2px; font-variant-numeric: tabular-nums; }
+.g-need .muted, .guide .muted { color: var(--muted); }
+.g-check { display: flex; gap: 8px; align-items: flex-start; background: #e9f3eb; color: #1f4a28; border-radius: var(--radius); padding: 8px 12px; margin-top: 8px; margin-bottom: 0; }
+.g-check .box { flex: none; width: 14px; height: 14px; border: 1.5px solid currentColor; border-radius: 2px; margin-top: 3px; }
+.g-warn { background: var(--warn-bg); color: var(--warn); border-radius: var(--radius); padding: 8px 12px; margin-top: 8px; margin-bottom: 0; }
+.g-tip { color: var(--muted); font-size: 13px; margin-top: 8px; margin-bottom: 0; }
+.g-foot { margin-top: 24px; font-size: 13px; }
 @media (max-width: 900px) {
+  .g-phase-head { grid-template-columns: 1fr; }
+  .g-shot { width: 100%; height: auto; aspect-ratio: 16 / 10; }
+  .g-cols, .g-need ul { columns: 1; }
+  .g-body, .g-need, .g-step > p { margin-left: 0; }
+}
+
+@media (max-width: 900px) {
+  .topbar { height: auto; flex-wrap: wrap; gap: 8px 14px; padding: 8px 12px; }
+  .brand { min-width: 0; flex: 1; }
+  .tabs { order: 3; flex-basis: 100%; }
   .layout { grid-template-columns: 1fr; height: auto; }
-  .panel { border-right: 0; border-bottom: 1px solid var(--line); }
+  main { order: 1; overflow: visible; }
+  .panel { order: 2; border-right: 0; border-top: 1px solid var(--line); }
+  .tab { padding: 16px 14px 40px; }
   #tab-model { height: 70vh; }
 }
 
@@ -151,4 +195,8 @@ table.data input.changed { border-color: var(--wood); background: #fff8ee; }
   .sheet { box-shadow: none; border: 0; margin: 0; width: 10.4in; height: 7.9in; max-width: none; aspect-ratio: auto; break-after: page; padding: 0; }
   table.data { font-size: 11px; }
   table.data input { border: 0; background: none; }
+  .g-toc { display: none; }
+  .g-phase { break-before: page; margin-top: 0; }
+  .g-phase:first-of-type { break-before: auto; }
+  .g-check, .g-warn, .g-need, .g-marks { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
