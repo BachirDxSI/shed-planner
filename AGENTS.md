@@ -42,6 +42,7 @@ js/app.js         form, tabs, rendering, localStorage
 - ES modules don't load from `file://`; always use a local server.
 - Browsers cache the modules aggressively during dev; hard-reload or use a no-cache server.
 - Rafter heights: use `geo.yb(x)` / `geo.yt(x)` for the bottom and top edges. The bottom edge meets the plate top at the inner end of the birdsmouth seat (x = `seat`), not at the wall's outer face; don't hand-roll `H - O * t`.
+- Stud layout on every wall is measured from the shed's outside corner (wall-local x = 0) so siding panel joints land on studs; gable walls use `cornerLayout()`.
 - `m.cut` is the stock length a piece needs (for rafters, the tip-to-tip blank `rafterStock`); `rafterCut` is the distance between the plumb cuts. Run the cut audit after any geometry change.
 - `renderPlans()` must only run once `geo` exists (opening at `#plans` used to crash).
 - Rafter span checks are approximate (SPF #2); snow loads above 80 psf only show a warning.
