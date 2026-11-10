@@ -1,6 +1,6 @@
-# Gable Shed Planner
+# Shed Planner
 
-Parametric plans for a board-and-batten gable shed (default 12' × 16', 10/12 pitch). **Live:** https://bachirdxsi.github.io/shed-planner/
+Parametric shed plans. It currently designs a board-and-batten gable shed (default 12' × 16', 10/12 pitch). **Live:** https://bachirdxsi.github.io/shed-planner/
 
 Change the size, pitch, doors, windows, rafters or snow load, and everything regenerates from one framing model:
 
