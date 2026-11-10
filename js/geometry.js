@@ -59,6 +59,21 @@ export function splitLength(len, max = MAX_STOCK) {
 function plane(o, ex, ez) {
   return { o, ex, ey: [0, 1, 0], ez };
 }
+// Split [a, b] into pieces no longer than stock, with every joint on one of `centers`
+// (stud or joist centers) and at least `gap` away from the joints in `avoid`.
+function splitOn(a, b, centers, avoid = [], gap = 0) {
+  const out = [];
+  let x = a;
+  while (b - x > MAX_STOCK + 1e-9) {
+    const ok = centers.filter((c) => c > x + 12 && c - x <= MAX_STOCK + 1e-9 && c < b - 12 && !avoid.some((j) => Math.abs(j - c) < gap));
+    const end = ok.length ? Math.max(...ok) : x + (b - x) / Math.ceil((b - x) / MAX_STOCK);
+    out.push([x, end]);
+    x = end;
+  }
+  out.push([x, b]);
+  return out;
+}
+
 export function toWorld(pl, x, y, d) {
   return [0, 1, 2].map((i) => pl.o[i] + pl.ex[i] * x + pl.ey[i] * y + pl.ez[i] * d);
 }
@@ -88,6 +103,9 @@ export function buildShed(input) {
   // so the birdsmouth is a notch cut into the rafter (heel plumb on the wall's outer face)
   const yb = (x) => H + (Math.min(x, W - x) - seat) * t;
   const yt = (x) => yb(x) + D / c; // rafter top edge line
+  const DEG = ((theta * 180) / Math.PI).toFixed(1);
+  const GUSSET_HALF = 12; // ridge gussets are 24" wide
+  const gussetBottom = yb(run - GUSSET_HALF);
   const peakTop = yt(run);
   const sheathT = 7 / 16;
   const roofT = sheathT + 0.25;
@@ -156,14 +174,11 @@ export function buildShed(input) {
       x += len;
     });
   });
-  [0, W - 1.5].forEach((z) => {
-    let x = 0;
-    splitLength(L).forEach((len) => {
-      add({ group: 'floor', kind: 'Rim joist', stock: '2x6PT', cut: len, box: [x, skidH, z, x + len, skidH + joistH, z + 1.5] });
-      x += len;
-    });
-  });
   const joistX = layout(0, L, p.joistSpacing);
+  // rim joist splices land on a joist center
+  [0, W - 1.5].forEach((z) => {
+    splitOn(0, L, joistX.map((x) => x + 0.75)).forEach(([x0, x1]) => add({ group: 'floor', kind: 'Rim joist', stock: '2x6PT', cut: x1 - x0, box: [x0, skidH, z, x1, skidH + joistH, z + 1.5] }));
+  });
   joistX.forEach((x) => add({ group: 'floor', kind: 'Floor joist', stock: '2x6PT', cut: W - 3, box: [x, skidH, 1.5, x + 1.5, skidH + joistH, W - 1.5] }));
   if (W - 3 > MAX_STOCK) warnings.push('Floor joists longer than 16 ft need a splice over a skid.');
 
@@ -191,26 +206,21 @@ export function buildShed(input) {
         return out;
       });
     });
-    segs.forEach(([a, b]) => {
-      let x = a;
-      splitLength(b - a).forEach((len) => {
-        m('Bottom plate', '2x4', rect(x, 0, x + len, 1.5), len);
-        x += len;
-      });
-    });
-    [[H - 3, 'Top plate'], [H - 1.5, 'Cap plate']].forEach(([y, kind]) => {
-      let x = w.x0;
-      splitLength(w.x1 - w.x0).forEach((len) => {
-        m(kind, '2x4', rect(x, y, x + len, y + 1.5), len);
-        x += len;
-      });
-    });
-
     const studLen = H - 4.5;
     const zones = ops.map((o) => [o.xL - 3, o.xL + o.w + 3]);
     const clear = (x) => !zones.some(([a, b]) => x + 1.5 > a && x < b);
     const grid = layout(w.x0, w.x1, p.studSpacing);
     const studXs = grid.filter(clear);
+    // Plate splices land on stud centers. The top plate runs the wall; the cap plate laps the corners
+    // (gable-wall caps run over the long walls) and its splices stay at least 4 ft from the top plate's.
+    const centers = studXs.map((sx) => sx + 0.75);
+    segs.forEach(([a, b]) => splitOn(a, b, centers).forEach(([x0, x1]) => m('Bottom plate', '2x4', rect(x0, 0, x1, 1.5), x1 - x0)));
+    const topParts = splitOn(w.x0, w.x1, centers);
+    topParts.forEach(([x0, x1]) => m('Top plate', '2x4', rect(x0, H - 3, x1, H - 1.5), x1 - x0));
+    const topJoints = topParts.slice(1).map(([x0]) => x0);
+    const c0 = w.gable ? w.x0 - 3.5 : w.x0 + 3.5;
+    const c1 = w.gable ? w.x1 + 3.5 : w.x1 - 3.5;
+    splitOn(c0, c1, centers, topJoints, 48).forEach(([x0, x1]) => m('Cap plate', '2x4', rect(x0, H - 1.5, x1, H), x1 - x0));
     if (w.corners) {
       // backer studs the gable walls nail into
       [w.x0 + 3.5, w.x1 - 5].forEach((x) => {
@@ -222,7 +232,7 @@ export function buildShed(input) {
     ops.forEach((o) => {
       const xR = o.xL + o.w;
       const hdrTop = o.top + 5.5;
-      const jackBot = o.bottom === 0 ? 0 : 1.5;
+      const jackBot = 1.5; // jacks stand on the bottom plate, which is cut flush with the opening
       m('King stud', '2x4', rect(o.xL - 3, 1.5, o.xL - 1.5, H - 3), studLen);
       m('King stud', '2x4', rect(xR + 1.5, 1.5, xR + 3, H - 3), studLen);
       m('Jack stud', '2x4', rect(o.xL - 1.5, jackBot, o.xL, o.top), o.top - jackBot);
@@ -242,12 +252,15 @@ export function buildShed(input) {
       grid
         .filter((x) => x > w.x0 && x < w.x1 - 1.5)
         .forEach((a) => {
-          const straddle = a < run && a + 1.5 > run;
-          const poly = [[a, H], [a + 1.5, H], [a + 1.5, yb(a + 1.5)]];
-          if (straddle) poly.push([run, yb(run)]);
-          poly.push([a, yb(a)]);
-          const len = (straddle ? yb(run) : Math.max(yb(a), yb(a + 1.5))) - H;
-          if (len >= 3) m('Gable stud', '2x4', poly, len);
+          // Top cut to the roof pitch, except studs under the end truss's ridge gusset:
+          // those get a square top just under the gusset (easier to cut, nothing to fit around).
+          const underGusset = a < run + GUSSET_HALF && a + 1.5 > run - GUSSET_HALF;
+          const sq = Math.min(gussetBottom, yb(a), yb(a + 1.5));
+          const poly = underGusset
+            ? [[a, H], [a + 1.5, H], [a + 1.5, sq], [a, sq]]
+            : [[a, H], [a + 1.5, H], [a + 1.5, yb(a + 1.5)], [a, yb(a)]];
+          const len = (underGusset ? sq : Math.max(yb(a), yb(a + 1.5))) - H;
+          if (len >= 3) m('Gable stud', '2x4', poly, len).note = underGusset ? 'Square top (fits under the ridge gusset)' : `Top cut ${DEG}° to the pitch; length is to the long point`;
         });
     }
   }
@@ -270,7 +283,8 @@ export function buildShed(input) {
     const pts = [[-O, yb(-O)], [run, yb(run)], [run, yt(run)], [-O, yt(-O)]];
     return mirror ? pts.map(([x, y]) => [W - x, y]).reverse() : pts;
   };
-  const rafterCut = (run + O) / c; // long point, along the top edge
+  const rafterCut = (run + O) / c; // between the parallel plumb cuts, measured along either edge
+  const rafterStock = rafterCut + D * t; // tip to tip: the plumb cuts lean, so the blank must be this long
   const rafterX = [0];
   for (let k = 1; ; k++) {
     const x = k * p.rafterSpacing - 0.75;
@@ -279,7 +293,7 @@ export function buildShed(input) {
   }
   rafterX.push(L - 1.5);
 
-  const g = 12; // gusset half-width
+  const g = GUSSET_HALF;
   const gussetPoly = [
     [run - g, yt(run - g)],
     [run, yt(run)],
@@ -297,8 +311,9 @@ export function buildShed(input) {
     const pl = trussPlane(X);
     const end = i === 0 || i === rafterX.length - 1;
     const base = { group: 'roof', plane: pl, d0: 0, depth: 1.5 };
-    add({ ...base, kind: 'Rafter', stock: p.rafterSize, poly: rafterPoly(false), cut: rafterCut });
-    add({ ...base, kind: 'Rafter', stock: p.rafterSize, poly: rafterPoly(true), cut: rafterCut });
+    const rNote = `Blank length. Plumb cuts ${DEG}° (parallel), ${ftIn(rafterCut)} apart along the top edge; birdsmouth per sheet S-5`;
+    add({ ...base, kind: 'Rafter', stock: p.rafterSize, poly: rafterPoly(false), cut: rafterStock, note: rNote });
+    add({ ...base, kind: 'Rafter', stock: p.rafterSize, poly: rafterPoly(true), cut: rafterStock, note: rNote });
     const faces = end ? [i === 0 ? 1.5 : -0.5] : [-0.5, 1.5];
     faces.forEach((d0) => {
       add({ group: 'roof', plane: pl, d0, depth: 0.5, kind: 'Gusset', stock: 'gusset', poly: gussetPoly, cut: 0 });
@@ -312,8 +327,9 @@ export function buildShed(input) {
   if (R >= 1.5) {
     [-R, L + R - 1.5].forEach((X) => {
       const pl = trussPlane(X);
-      add({ group: 'roof', plane: pl, d0: 0, depth: 1.5, kind: 'Fly rafter', stock: p.rafterSize, poly: flyPoly(false), cut: rafterCut });
-      add({ group: 'roof', plane: pl, d0: 0, depth: 1.5, kind: 'Fly rafter', stock: p.rafterSize, poly: flyPoly(true), cut: rafterCut });
+      const fNote = `Blank length. Plumb cuts ${DEG}° (parallel), ${ftIn(rafterCut)} apart along the top edge; no birdsmouth`;
+      add({ group: 'roof', plane: pl, d0: 0, depth: 1.5, kind: 'Fly rafter', stock: p.rafterSize, poly: flyPoly(false), cut: rafterStock, note: fNote });
+      add({ group: 'roof', plane: pl, d0: 0, depth: 1.5, kind: 'Fly rafter', stock: p.rafterSize, poly: flyPoly(true), cut: rafterStock, note: fNote });
     });
   }
   // sub-fascia along both eaves, nailed to the rafter tails
@@ -341,10 +357,14 @@ export function buildShed(input) {
   // ---------- Trim: battens, casing, site-built doors, corner boards, fascia ----------
   const trim = [];
   const sidingBottom = skidH - floorTop; // siding laps down over the rim joist
+  // On the long walls the rafter tails drop below the plate, so siding and trim stop under them:
+  // panels at the rafter bottom on the siding face (3/8"), battens and corner boards at the trim face (+3/4").
+  const eaveSidingTop = yb(-0.375);
+  const eaveTrimTop = yb(-1.125);
   const isGable = (n) => n === 'left' || n === 'right';
   const faces = [
-    { name: 'front', x0: -1, x1: L + 1, topAt: () => H },
-    { name: 'back', x0: -1, x1: L + 1, topAt: () => H },
+    { name: 'front', x0: -1, x1: L + 1, topAt: () => eaveTrimTop },
+    { name: 'back', x0: -1, x1: L + 1, topAt: () => eaveTrimTop },
     { name: 'left', x0: 0, x1: W, topAt: (x) => yt(x) - 0.75 },
     { name: 'right', x0: 0, x1: W, topAt: (x) => yt(x) - 0.75 },
   ];
@@ -393,22 +413,22 @@ export function buildShed(input) {
           trim.push({ ...dt, kind: 'Door stile', x0: lx + leafW - 3.5, x1: lx + leafW, y0: 0.5, y1: 0.5 + leafH, cut: leafH });
           [0.5, 0.5 + leafH / 2 - 1.75, 0.5 + leafH - 3.5].forEach((y) => trim.push({ ...dt, kind: 'Door rail', x0: lx + 3.5, x1: lx + leafW - 3.5, y0: y, y1: y + 3.5, cut: leafW - 7 }));
           const diag = Math.hypot(leafW - 7, leafH / 2 - 5.25);
-          trim.push({ ...dt, kind: 'Door brace', diag: true, x0: lx + 3.5, x1: lx + leafW - 3.5, y0: 4, y1: 0.5 + leafH / 2 - 1.75, cut: diag });
-          trim.push({ ...dt, kind: 'Door brace', diag: true, x0: lx + 3.5, x1: lx + leafW - 3.5, y0: 0.5 + leafH / 2 + 1.75, y1: leafH - 3, cut: diag });
+          trim.push({ ...dt, kind: 'Door brace', diag: true, x0: lx + 3.5, x1: lx + leafW - 3.5, y0: 4, y1: 0.5 + leafH / 2 - 1.75, cut: diag, note: 'Rough length: lay it across the rails and scribe both ends' });
+          trim.push({ ...dt, kind: 'Door brace', diag: true, x0: lx + 3.5, x1: lx + leafW - 3.5, y0: 0.5 + leafH / 2 + 1.75, y1: leafH - 3, cut: diag, note: 'Rough length: lay it across the rails and scribe both ends' });
         }
       }
     });
   });
-  const cornerH = H - sidingBottom;
-  for (let i = 0; i < 8; i++) trim.push({ kind: 'Corner board', stock: '1x4', corner: i, cut: cornerH });
+  // 8 corner boards: 4 on the long-wall faces (stop under the rafter tails), 4 on the gable faces (to the plate)
+  for (let i = 0; i < 8; i++) trim.push({ kind: 'Corner board', stock: '1x4', corner: i, cut: (i < 4 ? eaveTrimTop : H) - sidingBottom });
   splitLength(L + 2 * R + 1.5).forEach((len) => trim.push({ kind: 'Eave fascia', stock: '1x6', cut: len }, { kind: 'Eave fascia', stock: '1x6', cut: len }));
   const rakeLen = slopeLen + 3;
-  for (let i = 0; i < 4; i++) trim.push({ kind: 'Rake fascia', stock: '1x6', cut: rakeLen });
+  for (let i = 0; i < 4; i++) trim.push({ kind: 'Rake fascia', stock: '1x6', cut: rakeLen, note: `Rough length: plumb cut ${DEG}° at the peak, then mark the eave end in place` });
 
   return {
     p, W, L, H, t, theta, c, s, D, run, O, R, seat, floorTop, skidH, joistH, deckT,
-    yb, yt, peakTop, sheathT, roofT, slopeLen, rafterCut, rafterX, joistX, skidZ, nSkids,
-    gussetPoly, gussetArea, gussets, tiePoly, sidingBottom, isGable,
+    yb, yt, peakTop, sheathT, roofT, slopeLen, rafterCut, rafterStock, rafterX, joistX, skidZ, nSkids,
+    gussetPoly, gussetArea, gussets, tiePoly, sidingBottom, eaveSidingTop, eaveTrimTop, isGable,
     roofArea: 2 * slopeLen * (L + 2 * R),
     gableArea: run * t * W + W * (D / c), // both gable triangles plus the strip at the rafter depth
     wallSidingArea: 2 * (W + L) * (H - sidingBottom),

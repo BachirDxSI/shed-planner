@@ -286,7 +286,7 @@ export function roofPlan(geo) {
   d.dim(rx[1] + 0.75, W + O, rx[2] + 0.75, W + O, d.fs * 1.8, `${geo.p.rafterSpacing}" O.C.`, { size: 0.7 });
   d.dim(-R, -O, L + R, -O, -d.fs * 2.6, `${ftIn(L + 2 * R)} ROOF (${ftIn(R)} RAKE OVERHANG EACH END)`);
   d.dim(L + R, -O, L + R, W + O, -d.fs * 2.6, `${ftIn(W + 2 * O)} (${ftIn(O)} EAVE EACH SIDE)`);
-  d.leader(rx[3] + 0.75, W * 0.25, L * 0.48, W * 0.25, `(${rx.length}) RAFTER PAIRS ${geo.p.rafterSize} × ${ftIn(geo.rafterCut)}`);
+  d.leader(rx[3] + 0.75, W * 0.25, L * 0.48, W * 0.25, `(${rx.length}) RAFTER PAIRS ${geo.p.rafterSize}, ${ftIn(geo.rafterStock)} BLANKS`);
   if (R >= 1.5) d.leader(-R + 0.75, W * 0.75, L * 0.1, W * 0.88, `FLY RAFTER ${geo.p.rafterSize}, ${ftIn(R)} OUT`, { anchor: 'start' });
   d.text(L / 2, -O - d.fs * 4.8, `7/16" OSB SHEATHING WITH H-CLIPS · #15 FELT · ${geo.p.pitch}/12 ASPHALT SHINGLES · DRIP EDGE ALL EDGES`, { size: 0.7, fill: '#555' });
   return d.svg(2);
@@ -331,12 +331,14 @@ export function rafterDetail(geo) {
   const deg = ((theta * 180) / Math.PI).toFixed(1);
   const yb = (x) => geo.yb(x) - H; // bottom edge, plate top = 0
   const yt = (x) => geo.yt(x) - H; // top edge
-  d.dim(-O, yt(-O), run, yt(run), d.fs * 2.2, `${ftIn(geo.rafterCut)} LONG POINT TO LONG POINT`, { size: 0.9 });
+  d.dim(-O, yt(-O), run, yt(run), d.fs * 2.2, `${ftIn(geo.rafterCut)} ALONG TOP EDGE, PLUMB CUT TO PLUMB CUT`, { size: 0.9 });
+  const tx = -O - D * geo.s; // tail's bottom tip projected onto the top-edge line
+  d.dim(tx, yt(tx), run, yt(run), d.fs * 4.6, `${ftIn(geo.rafterStock)} MIN. BLANK (TIP TO TIP)`, { size: 0.75 });
   d.dim(seat, 0, run, yb(run), -d.fs * 2.4, `${ftIn((run - seat) / c)} SEAT TO RIDGE (BOTTOM EDGE)`, { size: 0.75 });
-  d.dim(-O, yb(-O), 0, yb(0), -d.fs * 2.4, `${ftIn(O / c)} TAIL`, { size: 0.7 });
-  d.leader(seat / 2, 0, seat + d.fs * 6, -d.fs * 3.4, `BIRDSMOUTH: SEAT ${ftIn(seat)} LEVEL · HEEL ${ftIn(seat * geo.t)} PLUMB`);
+  d.dim(-O, yb(-O), 0, yb(0), -d.fs * 2.4, '', { size: 0.7 });
+  d.leader(seat / 2, 0, seat + d.fs * 6, -d.fs * 3.4, `BIRDSMOUTH: HEEL ${ftIn(O / c)} FROM TAIL TIP (BOTTOM EDGE) · SEAT ${ftIn(seat)} LEVEL · HEEL ${ftIn(seat * geo.t)} PLUMB`);
   d.leader(run, yb(run) + D / (2 * c), run - d.fs * 3, yt(run) + d.fs * 4.4, `RIDGE PLUMB CUT: MITER ${deg}°`, { anchor: 'end' });
-  d.leader(-O, yb(-O) + D / (2 * c), -O + d.fs * 1, yb(-O) - d.fs * 4.6, `TAIL PLUMB CUT: MITER ${deg}°`, { anchor: 'start' });
+  d.leader(-O, yb(-O) + D / (2 * c), -O - d.fs * 2, yb(-O) + D / (2 * c) - d.fs * 2.5, `TAIL PLUMB CUT: MITER ${deg}°`, { anchor: 'end' });
   d.text(run * 0.45, yb(run * 0.45) + D / (2 * c), `${geo.p.rafterSize} — CUT ${geo.members.filter((mm) => mm.kind === 'Rafter' || mm.kind === 'Fly rafter').length}`, { size: 0.85, weight: 700, rot: -deg });
   return d.svg(2.4);
 }
@@ -370,7 +372,7 @@ export function elevation(geo, face) {
   const tailTop = geo.yt(-O);
   if (gable) {
     d.poly([[0, sb], [W, sb], [W, geo.yt(W)], [geo.run, geo.peakTop], [0, geo.yt(0)]], { fill: C.siding, sw: 1 });
-  } else d.rect(-0.75, sb, L + 0.75, H, { fill: C.siding, sw: 1 });
+  } else d.rect(-0.75, sb, L + 0.75, geo.eaveSidingTop, { fill: C.siding, sw: 1 });
   // openings
   geo.openings[face].forEach((o) => {
     if (o.type === 'window') {
@@ -452,8 +454,8 @@ export function section(geo) {
     d.rect(a, floorTop + H - 3, b, floorTop + H, { fill: '#d9d2c3', sw: 0.6 });
   });
   const sb = geo.sidingBottom + floorTop;
-  d.rect(-0.75, sb, 0, floorTop + H, { fill: '#fff', sw: 0.6 });
-  d.rect(W, sb, W + 0.75, floorTop + H, { fill: '#fff', sw: 0.6 });
+  d.rect(-0.75, sb, 0, floorTop + geo.eaveSidingTop, { fill: '#fff', sw: 0.6 });
+  d.rect(W, sb, W + 0.75, floorTop + geo.eaveSidingTop, { fill: '#fff', sw: 0.6 });
   const tie = geo.members.find((m) => m.kind === 'Rafter tie');
   if (tie) d.poly(up(tie.poly), { fill: C.frameDk, sw: 0.7 });
   geo.members.filter((m) => m.kind === 'Rafter').slice(0, 2).forEach((m) => d.poly(up(m.poly), { fill: C.frame, sw: 0.9 }));

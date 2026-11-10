@@ -176,7 +176,7 @@ export class ShedViewer {
     const sT = 0.6;
     const sb = g.sidingBottom;
     const holes = (face) => g.openings[face].map((o) => rect(o.xL, o.bottom === 0 ? 0 : o.bottom, o.xL + o.w, o.top));
-    ['front', 'back'].forEach((f) => this.mesh('siding', extrude(rect(-sT, sb, L + sT, H), sT, -sT, planes[f], holes(f)), MAT.siding));
+    ['front', 'back'].forEach((f) => this.mesh('siding', extrude(rect(-sT, sb, L + sT, g.eaveSidingTop), sT, -sT, planes[f], holes(f)), MAT.siding));
     const gablePoly = [[0, sb], [W, sb], [W, g.yt(W)], [g.run, g.peakTop], [0, g.yt(0)]];
     ['left', 'right'].forEach((f) => this.mesh('siding', extrude(gablePoly, sT, -sT, planes[f], holes(f)), MAT.siding));
 
@@ -201,7 +201,7 @@ export class ShedViewer {
     });
     // corner boards
     [['front', [-sT - 0.75, 2.75]], ['front', [L - 2.75, L + sT + 0.75]], ['back', [-sT - 0.75, 2.75]], ['back', [L - 2.75, L + sT + 0.75]]].forEach(([f, [a, b]]) =>
-      this.mesh('trim', extrude(rect(a, sb, b, H), tD, -sT - tD, planes[f]), MAT.trim)
+      this.mesh('trim', extrude(rect(a, sb, b, g.eaveTrimTop), tD, -sT - tD, planes[f]), MAT.trim)
     );
     ['left', 'right'].forEach((f) => {
       this.mesh('trim', extrude(rect(-sT - tD, sb, 3.5 - sT - tD, H), tD, -sT - tD, planes[f]), MAT.trim);
